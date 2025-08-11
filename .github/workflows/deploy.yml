@@ -3,6 +3,8 @@ name: Deploy to KingHost
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   deploy:
@@ -16,7 +18,16 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.1"
-          extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql, dom, filter, gd, json
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql, dom, filter, gd, iconv, json, mbstring, pdo
+
+      - name: Cache Composer packages
+        id: composer-cache
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress --no-dev --optimize-autoloader
@@ -36,6 +47,14 @@ jobs:
           echo "MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}" >> .env
           echo "MAIL_FROM_NAME=Portfolio - Lucas André" >> .env
 
+      - name: Optimize for production
+        run: |
+          # Remove development files
+          rm -rf tests/
+          rm -rf .git/
+          rm -f .gitignore
+          rm -f README.md
+
       - name: Deploy to KingHost via FTP
         uses: SamKirkland/FTP-Deploy-Action@4.3.3
         with:
@@ -43,7 +62,7 @@ jobs:
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
           local-dir: ./
-          server-dir: /public_html/
+          server-dir: /www/ # ← CORRIGIDO PARA /www/
           exclude: |
             **/.git*
             **/.git*/**
@@ -51,10 +70,15 @@ jobs:
             **/tests/**
             **/.env.example
             **/README.md
-            **/.github/**
 
       - name: Notify deployment success
         if: success()
         run: |
           echo "✅ Deployment successful!"
           echo "🌐 Site: https://anacron.com.br"
+
+      - name: Notify deployment failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          echo "Check the logs for more details."
