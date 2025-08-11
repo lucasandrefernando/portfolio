@@ -1,0 +1,37 @@
+# Dependências
+/vendor/
+/node_modules/
+
+# Ambiente
+.env
+.env.local
+.env.production
+
+# Logs
+/logs/
+*.log
+
+# Cache
+/cache/
+/tmp/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# Composer
+composer.lock
+
+# Build
+/build/
+/dist/
